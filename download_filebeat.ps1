@@ -1,11 +1,17 @@
 $fb_version = "6.5.4"
+$fb_root_dir = "C:\filebeat"
+if ((Test-Path $fb_root_dir) -ne 1) {
+  $fb_root_dir = "C:\Program Files\Filebeat"
+}
+
+Write-Host "Root dir: $fb_root_dir"
 
 # #########################
 # Download Filebeat
 # #########################
 Write-Host "Downloading Filebeat $fb_version"
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
-Invoke-WebRequest -Uri "https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-$fb_version-windows-x86_64.zip" `
+Invoke-WebRequest -Uri "https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-oss-$fb_version-windows-x86_64.zip" `
                   -OutFile "C:\Users\Administrator\Downloads\filebeat-$fb_version-windows-x86_64.zip"
 
 # #########################
@@ -18,22 +24,22 @@ Stop-Service filebeat
 # Backup the current configuration
 # #########################
 Write-Host "Backing up configuration"
-Copy-Item "C:\filebeat\filebeat.yml" -Destination "C:\Users\Administrator\Documents\filebeat.yml"
+Copy-Item "$($fb_root_dir)\filebeat.yml" -Destination "C:\Users\Administrator\Documents\filebeat.yml"
 
 # #########################
 # Removes everytyhing related to the current Filebeat
 # #########################
 Write-Host "Removing old Filebeat"
-Invoke-Expression "C:\filebeat\uninstall-service-filebeat.ps1"
+Invoke-Expression "$($fb_root_dir)\uninstall-service-filebeat.ps1"
 if ($?) {
-  get-childitem "C:\filebeat\*" -Recurse | Remove-item -Force
+  get-childitem "$($fb_root_dir)\*" -Recurse | Remove-item -Force
 
   if ((Test-Path "C:\ProgramData\filebeat\Logs") -eq 1) {
     get-childitem "C:\ProgramData\filebeat\Logs\*" -Recurse | Remove-item -Force
   }
   get-childitem "C:\ProgramData\filebeat\*" -Recurse | Remove-item -Force
   New-Item -ItemType Directory -path "C:\ProgramData\filebeat\logs"
-  Remove-Item "C:\filebeat\"
+  Remove-Item "$($fb_root_dir)\"
   Write-Host "Filebeat Removed"
 }
 else
